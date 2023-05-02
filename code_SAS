@@ -1,0 +1,72 @@
+/* Stepwise regression analysis - SAS*/
+/* Nithya */
+data WINE;
+infile '~/BAN100NAA/winequality-red.csv' delimiter = ';' MISSOVER DSD lrecl=32767 firstobs=2;
+input
+            fixed_acidity
+            volatile_acidity
+            citric_acid
+            residual_sugar
+            chlorides
+            free_sulfur_dioxide
+            total_sulfur_dioxide
+            density
+            pH
+            sulphates
+            alcohol
+            quality
+;
+run;
+* quality - dependent variable;
+title "Q4. Correlation to choose 6 variables for testing";
+proc corr data=wine;
+run;
+
+/* 
+The 6 independent variables chosen for testing:
+alcohol 
+sulphates 
+volatile_acidity 
+citric_acid 
+total_sulfur_dioxide 
+density
+*/
+title "Q4. Stepwise Regression Analysis";
+* Stepwise regression analysis;
+proc reg data=wine;
+	model quality=alcohol sulphates volatile_acidity citric_acid total_sulfur_dioxide density/ selection=adjrsq aic;
+	output out=out;
+run;
+* adjusted r-square is the highest for the model with below 4 variables
+alcohol sulphates volatile_acidity total_sulfur_dioxide;
+
+data wine_modified;
+	set wine(keep=alcohol sulphates volatile_acidity total_sulfur_dioxide quality);
+run;
+title "Q4. Regression co-efficients of model chosen after stepwise regression analysis";
+ods select ParameterEstimates;
+proc reg data=wine_modified outest=est;
+	model quality=alcohol sulphates volatile_acidity total_sulfur_dioxide;
+run;
+
+%let B0 = 2.826;
+%let B1 = 0.295;
+%let B2 = 0.712;
+%let B3 = -1.199;
+%let B4 = -0.002;
+
+data wine_modified;
+	set wine_modified;
+	quality_predicted = &B0 + 
+						(&B1 * alcohol) + 
+						(&B2 * sulphates) + 
+						(&B3 * volatile_acidity) +
+						(&B4 * total_sulfur_dioxide);
+run;
+/* 
+Final R square = 34.38%
+From the regression co-efficients, it can be inferred that volatile_acidity is the 
+most important predictor variable. 
+Also it is negatively correlated to the target variable quality.
+Hence, the value of co-efficient of this variable is high and negative.
+*/
